@@ -5,5 +5,5 @@ set(CMAKE_C_STANDARD 11)
 
 find_library(MHTD microhttpd)
 
-add_executable(wakeonlangateway main.c)
+add_executable(wakeonlangateway main.c wol.c wol.h)
 target_link_libraries(wakeonlangateway microhttpd)
