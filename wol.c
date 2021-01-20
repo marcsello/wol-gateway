@@ -1,12 +1,47 @@
 //
 // Created by marcsello on 20/01/2021.
 //
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <strings.h>
+
+
+int udp_send(const char *msg, size_t msg_size, const char *target, int port) {
+
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (sock < 0) {
+        return 0;
+    }
+
+    int yes = 1;
+    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes));
+    struct sockaddr_in servaddr = {
+            .sin_family = AF_INET,
+            .sin_addr.s_addr = inet_addr(target),
+            .sin_port = htons(port),
+    };
+
+    int ret = 1;
+
+    if (sendto(sock, msg, msg_size, 0, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
+        printf("Anyád2\n");
+        ret = 0;
+    }
+    close(sock);
+    return ret;
+}
+
 
 #include "wol.h"
 
 
 void send_wol() {
     char wol_payload[] = {
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
             0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
             0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
@@ -25,4 +60,8 @@ void send_wol() {
             0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
             0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
     };
+    printf("Sending WoL...\n");
+    if (!udp_send(wol_payload, 108, "255.255.255.255", 9)) {
+        printf("Failed to send WoL packet...\n");
+    }
 }
