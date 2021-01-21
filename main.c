@@ -116,18 +116,18 @@ void signal_handler(int signum) {
 int main(int argc, char **argv) {
 
     if (argc != 2) {
-        printf("Usage: wakeonlangateway [CONFIG PATH]");
+        printf("Usage: wakeonlangateway [CONFIG PATH]\n");
         return 1;
     }
 
     t_configuration configuration;
 
     if (!load_config(argv[1], &configuration)) {
-        printf("Failed to load config file: %s", argv[1]);
+        printf("Failed to load config file: %s\n", argv[1]);
         return 1;
     }
 
-    printf("Starting WoL Gateway on HTTP port %u\n", configuration.http_port);
+    printf("Starting WoL Gateway on HTTP port %u...\n", configuration.http_port);
 
     struct MHD_Daemon *d;
     unsigned int flags = MHD_USE_THREAD_PER_CONNECTION |
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
 
     t_response_store *response_store = init_responses();
     if (response_store == NULL) {
-        printf("Failed to setup response store");
+        printf("Failed to setup response store\n");
         return 1;
     }
 
