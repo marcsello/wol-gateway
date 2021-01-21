@@ -9,6 +9,7 @@
 
 typedef struct __attribute__((__packed__)) t_response_store {
     struct MHD_Response *response_internal_server_error;
+    struct MHD_Response *response_bad_request;
     struct MHD_Response *response_method_not_allowed;
     struct MHD_Response *response_not_found;
     struct MHD_Response *response_ok;
