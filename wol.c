@@ -83,7 +83,7 @@ void send_wol(const char *mac_str) {
     unsigned char wol_payload[102];
     craft_magic_packet(mac_str, wol_payload);
 
-    printf("Sending WoL...\n");
+    printf("Sending WoL to %s...\n",mac_str);
     if (!udp_send(wol_payload, 102, "255.255.255.255", 9)) {
         printf("Failed to send WoL packet...\n");
     }
