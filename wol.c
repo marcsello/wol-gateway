@@ -7,9 +7,12 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <strings.h>
+#include <string.h>
+#include <stdlib.h>
+#include "wol.h"
 
 
-int udp_send(const char *msg, size_t msg_size, const char *target, int port) {
+int udp_send(const unsigned char *msg, size_t msg_size, const char *target, int port) {
 
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -28,7 +31,6 @@ int udp_send(const char *msg, size_t msg_size, const char *target, int port) {
     int ret = 1;
 
     if (sendto(sock, msg, msg_size, 0, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-        printf("Anyád2\n");
         ret = 0;
     }
     close(sock);
@@ -36,32 +38,53 @@ int udp_send(const char *msg, size_t msg_size, const char *target, int port) {
 }
 
 
-#include "wol.h"
+int parse_mac(const char *mac_str, char *mac_bin) {
 
+    if (strnlen(mac_str, 20) != 17) {
+        return 0;
+    }
 
-void send_wol() {
-    char wol_payload[] = {
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-            0xbc, 0xee, 0x7b, 0x59, 0x16, 0x30,
-    };
+    char mac_str_work[17 + 1];
+    strcpy(mac_str_work, mac_str);
+
+    char *token;
+    token = strtok(mac_str_work, ":");
+    int i = 0;
+
+    while ((token != NULL) && (i < 6)) {
+        unsigned long a = strtoul(token, NULL, 16);
+
+        if (a > 255) {
+            return 0;
+        }
+
+        mac_bin[i] = (unsigned char) a;
+
+        token = strtok(NULL, ":");
+        i++;
+    }
+
+    return i == 6;
+}
+
+void craft_magic_packet(const char *mac_str, unsigned char *outbuf) {
+    char mac_bin[6];
+    parse_mac(mac_str, mac_bin); // TODO: check return value
+
+    memset(outbuf, 0xff, 6);
+
+    for (int i = 0; i < 16; i++) {
+        memcpy(outbuf + (i * 6) + 6, mac_bin, 6);
+    }
+
+}
+
+void send_wol(const char *mac_str) {
+    unsigned char wol_payload[102];
+    craft_magic_packet(mac_str, wol_payload);
+
     printf("Sending WoL...\n");
-    if (!udp_send(wol_payload, 108, "255.255.255.255", 9)) {
+    if (!udp_send(wol_payload, 102, "255.255.255.255", 9)) {
         printf("Failed to send WoL packet...\n");
     }
 }

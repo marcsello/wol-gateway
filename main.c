@@ -75,7 +75,7 @@ static int http_handler(void *cls,
         return MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED, response_store->response_method_not_allowed);
     }
 
-    send_wol(); // <- magic happens here
+    send_wol("bc:ee:7b:59:16:30"); // <- magic happens here
 
     return MHD_queue_response(connection, MHD_HTTP_OK, response_store->response_ok);
 }
