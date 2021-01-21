@@ -14,7 +14,8 @@ typedef struct __attribute__((__packed__)) t_response_store {
     struct MHD_Response *response_ok;
 } t_response_store;
 
-int setup_responses(t_response_store **response_store_ptr);
+t_response_store *init_responses();
+
 void destory_responses(t_response_store *response_store);
 
 #endif //WAKEONLANGATEWAY_RESPONSES_H

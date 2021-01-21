@@ -87,8 +87,8 @@ int main(int argc, char **argv) {
 
     signal(SIGPIPE, SIG_IGN); // MHD required to ignore sigpipe
 
-    t_response_store *response_store;
-    if (!setup_responses(&response_store)) {
+    t_response_store *response_store = init_responses();
+    if (response_store == NULL) {
         printf("Failed to setup response store");
         return 1;
     }

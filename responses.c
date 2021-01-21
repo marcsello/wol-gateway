@@ -13,11 +13,11 @@
 
 #define RESPONSE_STORE_MEMBER_COUNT 4
 
-int setup_responses(t_response_store **response_store_ptr) {
+t_response_store *init_responses() {
     t_response_store *response_store = (t_response_store *) malloc(sizeof(t_response_store));
 
     if (response_store == NULL) {
-        return 0;
+        return NULL;
     }
 
     // Response 200
@@ -47,22 +47,20 @@ int setup_responses(t_response_store **response_store_ptr) {
     for (int i = 0; i < RESPONSE_STORE_MEMBER_COUNT; i++) {
 
         if (response_store_elements[i] == NULL) {
-            return 0;
+            return NULL;
         }
 
         if (MHD_add_response_header(response_store_elements[i], "X-Best-Pony", "Derpy") == MHD_NO) {
-            return 0;
+            return NULL;
         }
 
         if (MHD_add_response_header(response_store_elements[i], "Content-Type", "text/plain; charset=UTF-8") == MHD_NO) {
-            return 0;
+            return NULL;
         }
     }
 
     // Set meme
-    *response_store_ptr = response_store;
-
-    return 1;
+    return response_store;
 }
 
 void destory_responses(t_response_store *response_store) {
