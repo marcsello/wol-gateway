@@ -37,10 +37,10 @@ int udp_send(const unsigned char *msg, size_t msg_size, const char *target, int 
             .sin_port = htons(port),
     };
 
-    int ret = UDP_SEND_ERROR_SENDTO;
+    int ret = UDP_SEND_SUCCESS;
 
     if (sendto(sock, msg, msg_size, 0, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-        ret = UDP_SEND_SUCCESS;
+        ret = UDP_SEND_ERROR_SENDTO;
     }
     close(sock);
     return ret;
