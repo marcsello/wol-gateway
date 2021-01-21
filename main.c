@@ -7,6 +7,7 @@
 
 #include "wol.h"
 #include "responses.h"
+#include "config.h"
 
 int handle_wol_request(struct MHD_Connection *connection, t_response_store *response_store, const char *url) {
 
@@ -113,7 +114,21 @@ void signal_handler(int signum) {
 }
 
 int main(int argc, char **argv) {
-    printf("Starting WoL Gateway...\n");
+
+    if (argc != 2) {
+        printf("Usage: wakeonlangateway [CONFIG PATH]");
+        return 1;
+    }
+
+    t_configuration configuration;
+
+    if (!load_config(argv[1], &configuration)) {
+        printf("Failed to load config file: %s", argv[1]);
+        return 1;
+    }
+
+    printf("Starting WoL Gateway on HTTP port %u\n", configuration.http_port);
+
     struct MHD_Daemon *d;
     unsigned int flags = MHD_USE_THREAD_PER_CONNECTION |
                          MHD_OPTION_STRICT_FOR_CLIENT |
@@ -130,7 +145,7 @@ int main(int argc, char **argv) {
     }
 
     d = MHD_start_daemon(flags,
-                         8080,
+                         configuration.http_port,
                          NULL, // callback to call to check which clients will be allowed to connect
                          NULL, // extra params for previous
                          &http_handler, // dh = default handler
