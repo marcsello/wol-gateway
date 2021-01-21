@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include "wol.h"
 
-#define MAC_STRING_LEN 17
 #define BYTES_IN_MAC 6
 #define WOL_HEADER_LEN 6
 #define MAGIC_PACKET_MAC_REPETITIONS 16
@@ -63,11 +62,17 @@ int parse_mac(const char *mac_str, char *mac_bin) {
     int i = 0;
 
     while ((token != NULL) && (i < BYTES_IN_MAC)) {
-        unsigned long a = strtoul(token, NULL, 16);
+        char *endptr;
+        unsigned long a = strtoul(token, &endptr, 16);
 
         // ghetto way to check if it's not larger than a byte
         // no need to check lower bound because unsigned variables
         if (a > 255) {
+            return 0;
+        }
+
+        // strtoul should always parse 2 characters. If it did not, then it's no bueno
+        if (endptr-2 != token) {
             return 0;
         }
 

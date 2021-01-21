@@ -11,6 +11,8 @@
 #define SEND_WOL_ERROR_SENDTO_SOCKET 3
 #define SEND_WOL_ERROR_SEND_SENDTO 4
 
+#define MAC_STRING_LEN 17
+
 int send_wol(const char *mac_str);
 
 #endif //WAKEONLANGATEWAY_WOL_H
