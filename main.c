@@ -8,6 +8,38 @@
 #include "wol.h"
 #include "responses.h"
 
+int handle_wol_request(struct MHD_Connection *connection, t_response_store *response_store, const char *url) {
+
+    if (strlen(url) != MAC_STRING_LEN + 6) { // 6 = /wake/
+        return MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response_store->response_bad_request);
+    }
+
+    const char *mac = url + 6;
+
+    int ret = send_wol(mac); // <- magic happens here
+    int last_errno = errno;
+
+    switch (ret) {
+        case SEND_WOL_SUCCESS:
+            printf("Sent WoL to %s\n", mac);
+            return MHD_queue_response(connection, MHD_HTTP_OK, response_store->response_ok);
+
+        case SEND_WOL_ERROR_INVALID_MAC:
+            return MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response_store->response_bad_request);
+
+        case SEND_WOL_ERROR_SEND:
+        case SEND_WOL_ERROR_SENDTO_SOCKET:
+        case SEND_WOL_ERROR_SEND_SENDTO:
+            printf("Failed to send WoL packet! Error %d (ERRNO: %d)\n", ret, last_errno);
+            return MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR,
+                                      response_store->response_internal_server_error);
+
+        default:
+            return MHD_NO;
+    }
+}
+
+
 typedef struct t_request_context {
     size_t total_body_size;
 } t_request_context;
@@ -57,36 +89,19 @@ static int http_handler(void *cls,
     free(request_context);
     *ptr = NULL;
 
-    if (strcmp(url, "/wake") != 0) {
-        return MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response_store->response_not_found);
+    if (strncmp(url, "/wake/", 6) == 0) { // test if the url starts with /wake/
+
+        if (strcmp(method, "POST") != 0) { // only POST is allowed
+            return MHD_queue_response(
+                    connection, MHD_HTTP_METHOD_NOT_ALLOWED,
+                    response_store->response_method_not_allowed);
+        }
+
+        return handle_wol_request(connection, response_store, url);
+
     }
 
-    if (strcmp(method, "POST") != 0) {
-        return MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED, response_store->response_method_not_allowed);
-    }
-
-    const char * mac = "bc:ee:7b:59:16:30";
-
-    int ret = send_wol(mac); // <- magic happens here
-    int last_errno = errno;
-
-    switch (ret) {
-        case SEND_WOL_SUCCESS:
-            printf("Sent WoL to %s\n",mac);
-            return MHD_queue_response(connection, MHD_HTTP_OK, response_store->response_ok);
-
-        case SEND_WOL_ERROR_INVALID_MAC:
-            return MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response_store->response_bad_request);
-
-        case SEND_WOL_ERROR_SEND:
-        case SEND_WOL_ERROR_SENDTO_SOCKET:
-        case SEND_WOL_ERROR_SEND_SENDTO:
-            printf("Failed to send WoL packet! Error %d (ERRNO: %d)\n", ret, last_errno);
-            return MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response_store->response_internal_server_error);
-
-        default:
-            return MHD_NO;
-    }
+    return MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response_store->response_not_found);
 
 }
 
