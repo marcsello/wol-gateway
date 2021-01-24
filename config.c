@@ -8,6 +8,18 @@
 
 #include "config.h"
 
+bool str_to_bool(const char *str) {
+
+    if (strncmp(str, "TRUE", 4) == 0 ||
+        strncmp(str, "true", 4) == 0 ||
+        strncmp(str, "1", 1) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
 
 static int handler(void *user, const char *section, const char *name, const char *value) {
     t_configuration *configuration_ptr = (t_configuration *) user;
@@ -16,6 +28,8 @@ static int handler(void *user, const char *section, const char *name, const char
 
     if (MATCH("wakeonlangateway", "http_port")) {
         configuration_ptr->http_port = strtoul(value, NULL, 10);
+    } else if (MATCH("wakeonlangateway", "log_requests")) {
+        configuration_ptr->log_requests = str_to_bool(value);
     } else {
         return 0;
     }

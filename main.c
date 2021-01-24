@@ -41,9 +41,14 @@ int handle_wol_request(struct MHD_Connection *connection, t_response_store *resp
 }
 
 
-typedef struct t_request_context {
+typedef struct {
     size_t total_body_size;
 } t_request_context;
+
+typedef struct {
+    t_response_store *response_store;
+    t_configuration *configuration;
+} t_request_config;
 
 static int http_handler(void *cls,
                         struct MHD_Connection *connection,
@@ -79,11 +84,14 @@ static int http_handler(void *cls,
     }
 
     // Everything is received, start handling the request
-    t_response_store *response_store = (t_response_store *) cls;
-    if (request_context->total_body_size) {
-        printf("[%s] %s (%ld bytes)\n", method, url, request_context->total_body_size);
-    } else {
-        printf("[%s] %s\n", method, url);
+    t_request_config *request_config = (t_request_config *) cls;
+
+    if (request_config->configuration->log_requests) {
+        if (request_context->total_body_size) {
+            printf("[%s] %s (%ld bytes)\n", method, url, request_context->total_body_size);
+        } else {
+            printf("[%s] %s\n", method, url);
+        }
     }
 
     // We no longer need the context
@@ -95,14 +103,14 @@ static int http_handler(void *cls,
         if (strcmp(method, "POST") != 0) { // only POST is allowed
             return MHD_queue_response(
                     connection, MHD_HTTP_METHOD_NOT_ALLOWED,
-                    response_store->response_method_not_allowed);
+                    request_config->response_store->response_method_not_allowed);
         }
 
-        return handle_wol_request(connection, response_store, url);
+        return handle_wol_request(connection, request_config->response_store, url);
 
     }
 
-    return MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response_store->response_not_found);
+    return MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, request_config->response_store->response_not_found);
 
 }
 
@@ -144,12 +152,18 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Read-only configuration that's available for every request
+    t_request_config request_config = {
+            .configuration = &configuration,
+            .response_store = response_store
+    };
+
     d = MHD_start_daemon(flags,
                          configuration.http_port,
                          NULL, // callback to call to check which clients will be allowed to connect
                          NULL, // extra params for previous
                          &http_handler, // dh = default handler
-                         response_store, // args to dh
+                         &request_config, // args to dh
                          MHD_OPTION_CONNECTION_TIMEOUT,
                          5,
                          MHD_OPTION_END);
