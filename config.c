@@ -37,11 +37,19 @@ static int handler(void *user, const char *section, const char *name, const char
     return 1;
 }
 
-int load_config(const char *config_path, t_configuration *configuration_ptr) {
+t_configuration* load_config(const char* config_path) {
+
+    t_configuration *configuration_ptr = (t_configuration*)malloc(sizeof(t_configuration));
 
     if (ini_parse(config_path, handler, configuration_ptr) < 0) {
-        return 0;
+        free(configuration_ptr);
+        return NULL;
     }
 
-    return 1;
+    return configuration_ptr;
+}
+
+
+void free_config(t_configuration* configuration_ptr) {
+    free(configuration_ptr);
 }

@@ -12,6 +12,8 @@ typedef struct {
     bool log_requests;
 } t_configuration;
 
-int load_config(const char* config_path, t_configuration* configuration_ptr);
+t_configuration* load_config(const char* config_path);
+
+void free_config(t_configuration* configuration_ptr);
 
 #endif //WAKEONLANGATEWAY_CONFIG_H

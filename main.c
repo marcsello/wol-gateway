@@ -128,14 +128,14 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    t_configuration configuration;
+    t_configuration *configuration = load_config(argv[1]);
 
-    if (!load_config(argv[1], &configuration)) {
+    if (configuration == NULL) {
         printf("Failed to load config file: %s\n", argv[1]);
         return 1;
     }
 
-    printf("Starting WoL Gateway on HTTP port %u...\n", configuration.http_port);
+    printf("Starting WoL Gateway on HTTP port %u...\n", configuration->http_port);
 
     struct MHD_Daemon *d;
     unsigned int flags = MHD_USE_THREAD_PER_CONNECTION |
@@ -154,12 +154,12 @@ int main(int argc, char **argv) {
 
     // Read-only configuration that's available for every request
     t_request_config request_config = {
-            .configuration = &configuration,
+            .configuration = configuration,
             .response_store = response_store
     };
 
     d = MHD_start_daemon(flags,
-                         configuration.http_port,
+                         configuration->http_port,
                          NULL, // callback to call to check which clients will be allowed to connect
                          NULL, // extra params for previous
                          &http_handler, // dh = default handler
@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
     // Cleanup
     MHD_stop_daemon(d);
     destory_responses(response_store);
+    free_config(configuration);
     printf("WoL Gateway stopped.\n");
     return 0;
 }
